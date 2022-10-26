@@ -7,31 +7,35 @@ import numpy
 from scipy.stats import beta
 from scipy.special import logsumexp
 from math import log, log1p, exp
+from collections import Counter
+import pandas
 
-#%matplotlib inline
+# %matplotlib inline
 import matplotlib.pyplot as plt
 from IPython.display import set_matplotlib_formats
+
 set_matplotlib_formats('svg', 'pdf')
 
+personalities = ['F', 'S']  # F for flexible, S for stubborn
 
-personalities = ['F', 'S'] #F for flexible, S for stubborn
+sentence_type = ['reversible', 'irreversible']  # two kinds of sentences
+sentence_weights = [7,
+                    3]  # humans use more reversible sentences than irreversible ones, so, weights should be different
 
-sentence_type = ['reversible', 'irreversible'] # two kinds of sentences
-sentence_weights = [7, 3] # humans use more reversible sentences than irreversible ones, so, weights should be different
-
-basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS', 'VSO'] # possible 6 orders for basit transitive sentences, maybe "no order/other" can be added
+basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS',
+                'VSO']  # possible 6 orders for basic sentences, maybe "no order/other" can be added
 
 # for children making process
 start = 1
 stop = 3
 
-# bias for corresponding word order in basic_orders
+# starting bias weights for corresponding word order in basic_orders
 starting_irrev_bias = [1, 1, 1, 1, 1, 1]
 starting_rev_bias = [1, 1, 1, 1, 1, 1]
 
 
 class Agent:
-    # children
+
     def __init__(self, g, p, l, mother=None, father=None):  # First agent has no parent, children will.
         self.generation = g
         self.personality = p
@@ -43,31 +47,58 @@ class Agent:
             self.irrev_weights = self.set_irrev_weights(mother, father)
             self.rev_weights = self.set_rev_weights(mother, father)
 
-    def new_weight(self, order):  # for updating the stubborn agent's word order weights
+    def new_weight_rev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i:
-                weight.append(1)  # if the used/given order is what it is, than add 1 to the weight
+            if order == i or i == 'SVO':
+                weight.append(0.001)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
         return weight
 
-    def new_weight_with_error(self, order):  # for updating the flexible agent's word order weights
+    def new_weight_irrev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i:
-                weight.append(1)  # add 1 to the corresponding word order's place
+            if order == i or i == 'SOV':
+                weight.append(0.001)  # if the used/given order is what it is, than add 1 to the weight
             else:
-                weight.append(random.randint(-1, 1))  # there should be a error
+                weight.append(0)  # if it is not, add 0 (nothing)
         return weight
 
-    def new_weight_with_pressure(self, order):  # some pressures made us eliminate others
+    def new_weight_with_error_irrev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i:
-                weight.append(1)  # add 1 to the used word order
+            if order == i or i == 'SOV':
+                weight.append(0.001)  # add 1 to the corresponding word order's place
             else:
-                weight.append(-1)  # add -1 to weights of non-used word orders
+                weight.append(random.uniform(-1, 1))  # there should be a error
+        return weight
+
+    def new_weight_with_error_rev(self, order):  # for updating the flexible agent's word order weights
+        weight = []
+        for i in basic_orders:
+            if order == i or i == 'SVO':
+                weight.append(0.001)  # add 1 to the corresponding word order's place
+            else:
+                weight.append(random.uniform(-1, 1))  # there should be a error
+        return weight
+
+    def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
+        weight = []
+        for i in basic_orders:
+            if order == i or i == 'SOV':
+                weight.append(0.001)  # add 1 to the used word order
+            else:
+                weight.append(-0.001)  # add -1 to weights of non-used word orders
+        return weight
+
+    def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
+        weight = []
+        for i in basic_orders:
+            if order == i or i == 'SVO':
+                weight.append(0.001)  # add 1 to the used word order
+            else:
+                weight.append(-0.001)  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -90,133 +121,142 @@ class Agent:
 
     def add_rev_weights(self, word_order):
         if self.is_stubborn():
-            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight(word_order))
+            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_rev(word_order))
         else:
-            multiplied_list = [element * 2 for element in self.new_weight_with_error(word_order)]
+            multiplied_list = [element * 1 for element in self.new_weight_with_error_rev(word_order)]
             self.rev_weights = self.list_summation(self.rev_weights, multiplied_list)
 
     def add_irrev_weights(self, word_order):
         if self.is_stubborn():
-            self.irrev_weights = self.list_summation(self.irrev_weights, self.new_weight(word_order))
+            self.irrev_weights = self.list_summation(self.irrev_weights, self.new_weight_irrev(word_order))
         else:
-            multiplied_list = [element * 2 for element in self.new_weight_with_error(word_order)]
+            multiplied_list = [element * 1 for element in self.new_weight_with_error_irrev(word_order)]
             self.irrev_weights = self.list_summation(self.irrev_weights, multiplied_list)
 
     def add_rev_weights_with_pressure(self, word_order):
         if self.is_stubborn():
-            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_with_pressure(word_order))
+            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_with_pressure_rev(word_order))
         else:
-            multiplied_list = [element * 2 for element in self.new_weight_with_error(word_order)]
+            multiplied_list = [element * 1 for element in self.new_weight_with_pressure_rev(word_order)]
             self.rev_weights = self.list_summation(self.rev_weights, multiplied_list)
 
     def add_irrev_weights_with_pressure(self, word_order):
         if self.is_stubborn():
-            self.irrev_weights = self.list_summation(self.irrev_weights, self.new_weight(word_order))
+            self.irrev_weights = self.list_summation(self.irrev_weights,
+                                                     self.new_weight_with_pressure_irrev(word_order))
         else:
-            multiplied_list = [element * 2 for element in self.new_weight_with_error(word_order)]
+            multiplied_list = [element * 1 for element in self.new_weight_with_pressure_irrev(word_order)]
             self.irrev_weights = self.list_summation(self.irrev_weights, multiplied_list)
 
 
-#print agents
+# print agents
 def print_agent(agent):
     return [agent.generation, agent.personality, agent.ling, agent.irrev_weights, agent.rev_weights]
 
-def make_first_gen_agents(N): # create N number of agents with different random personalities
+
+def make_first_gen_agents(N):  # create N number of agents with different random personalities
     gen = 1
     population = []
 
     for i in range(N):
-        l = random.randint(0,1)
-        p = random.randint(0,1)
+        l = random.randint(0, 1)
+        p = random.randint(0, 1)
         agent = Agent(gen, personalities[p], l)
         population.append(agent)
 
-    #for obj in population:
-      #print(obj.rev_weights)
+    # for obj in population:
+    # print(obj.rev_weights)
 
     return population
 
-def create_children(mother, father, number_of_children): # create children of given mother and father, with the given number of children
-        children = []
-        for i in range(number_of_children):
-          l = random.randint(0,1)
-          p = random.randint(0,1)
-          child = Agent(mother.generation + 1, personalities[p], l, mother, father)
-          children.append(child)
-        return children
 
-def pop_random(lst): # select random pairs from a list
+def create_children(mother, father,
+                    number_of_children):  # create children of given mother and father, with the given number of children
+    children = []
+    for i in range(number_of_children):
+        l = random.randint(0, 1)
+        p = random.randint(0, 1)
+        child = Agent(mother.generation + 1, personalities[p], l, mother, father)
+        children.append(child)
+    return children
+
+
+def pop_random(lst):  # select random pairs from a list
     idx = random.randrange(0, len(lst))
     return lst.pop(idx)
 
-def create_pairs(population): # select mother+father pairs from a population
-  lst = list(range(0, len(population)))
-  pairs = []
-  while len(lst) > 1:
-      rand1 = pop_random(lst)
-      rand2 = pop_random(lst)
-      pair = rand1, rand2
-      pairs.append(pair)
-  return pairs
+
+def create_pairs(population):  # select mother+father pairs from a population
+    lst = list(range(0, len(population)))
+    pairs = []
+    while len(lst) > 1:
+        rand1 = pop_random(lst)
+        rand2 = pop_random(lst)
+        pair = rand1, rand2
+        pairs.append(pair)
+    return pairs
 
 
-def calculate_average_children_number_per_family(length_pop): # calculate the average number of each mother+father pair
-  average_children = round((length_pop*(random.randrange(start, stop+1)+0.3)/length_pop))
-  #print(average_children)
-  return average_children
+def calculate_average_children_number_per_family(length_pop):  # calculate the average number of each mother+father pair
+    average_children = round((length_pop * (random.randrange(start, stop + 1) + 0.3) / length_pop))
+    # print(average_children)
+    return average_children
+
 
 def create_generation(prev_generation_pop):
-  population_length = len(prev_generation_pop)
-  pairs = create_pairs(prev_generation_pop)
-  next_gen = []
-  for p in pairs:
-    children_number = calculate_average_children_number_per_family(population_length)
-    next_gen.extend(create_children(prev_generation_pop[p[0]], prev_generation_pop[p[1]], children_number))
-  #print(len(next_gen))
-  return next_gen
+    population_length = len(prev_generation_pop)
+    pairs = create_pairs(prev_generation_pop)
+    next_gen = []
+    for p in pairs:
+        children_number = calculate_average_children_number_per_family(population_length)
+        next_gen.extend(create_children(prev_generation_pop[p[0]], prev_generation_pop[p[1]], children_number))
+    # print(len(next_gen))
+    return next_gen
 
-#tt = []
-#tt.extend(make_first_gen_agents(15))
+
+# tt = []
+# tt.extend(make_first_gen_agents(15))
 ##print(tt)
-#newly_whole_population = []
-#newly_whole_population.extend(tt)
+# newly_whole_population = []
+# newly_whole_population.extend(tt)
 ##print(len(newly_whole_population))
-#for i in range(10):
+# for i in range(10):
 #  current_prev = tt[:]
 #  #print(f"current prev {current_prev}")
 #  tt.extend(create_generation(current_prev))
 #  newly_whole_population.extend(tt)
 #  print(len(newly_whole_population))
 
-from collections import Counter
-import pandas
 
 def plot_freq_list(l, ttle):
-  count = Counter(sorted(l))
-  df = pandas.DataFrame.from_dict(count, orient='index')
-  df.plot(kind='bar')
-  plt.title(ttle)
-  plt.show()
+    count = Counter(sorted(l))
+    df = pandas.DataFrame.from_dict(count, orient='index')
+    df.plot(kind='bar')
+    plt.title(ttle)
+    plt.show()
 
 
 def generate_word_order_list(order_list, weight, n):
-  return random.choices(order_list, weights = weight, k = n)
+    return random.choices(order_list, weights=weight, k=n)
 
-#IRREV_WORD_ORDER_LIST = []
-#REV_WORD_ORDER_LIST = []
 
-#IRREV_WORD_ORDER_LIST = generate_word_order_list(basic_orders, starting_irrev_bias, 100)
-#REV_WORD_ORDER_LIST = generate_word_order_list(basic_orders, starting_rev_bias, 100)
+# IRREV_WORD_ORDER_LIST = []
+# REV_WORD_ORDER_LIST = []
+
+# IRREV_WORD_ORDER_LIST = generate_word_order_list(basic_orders, starting_irrev_bias, 100)
+# REV_WORD_ORDER_LIST = generate_word_order_list(basic_orders, starting_rev_bias, 100)
+
 
 def make_utterance(n):
-  return random.choices(sentence_type, weights =sentence_weights, k = n)
+    return random.choices(sentence_type, weights=sentence_weights, k=n)
 
-#utterence_list =[]
-#utterence_list = make_utterance(500)
 
-#plot_freq_list(utterence_list, "sentences")
-#plot_freq_list(IRREV_WORD_ORDER_LIST, "irrev")
-#plot_freq_list(REV_WORD_ORDER_LIST, "rev")
+# utterence_list =[]
+# utterence_list = make_utterance(500)
+
+# plot_freq_list(utterence_list, "sentences")
+# plot_freq_list(IRREV_WORD_ORDER_LIST, "irrev")
+# plot_freq_list(REV_WORD_ORDER_LIST, "rev")
 
 
 def select_two_random_persons(population):
@@ -258,7 +298,7 @@ def two_people_communicate(n,
         listener_index = int(not speaker_index)
         # print(speaker_index, listener_index)
 
-        if sentence_list[i] == 'irrev':
+        if sentence_list[i] == 'irreversible':
             spoken_word_order = generate_word_order_list(basic_orders, selected_people[speaker_index].irrev_weights,
                                                          1)  # generate a word order for given sentence
             # print(spoken_word_order)
@@ -283,14 +323,14 @@ def n_people_communicate(n_people, n_sent,
         speaker = random.choice(selected_people)
         # print(speaker)
 
-        if sentence_list[i] == 'irrev':
+        if sentence_list[i] == 'irreversible':
             spoken_word_order = generate_word_order_list(basic_orders, population[speaker].irrev_weights,
                                                          1)  # generate a word order for given sentence
             # print(f'irrev: {spoken_word_order}')
             # update listeners
             for l in selected_people:
                 if l != speaker:
-                    population[l].add_irrev_weights_with_pressure(spoken_word_order[0])
+                    population[l].add_irrev_weights(spoken_word_order[0])
 
         else:
             spoken_word_order = generate_word_order_list(basic_orders, population[speaker].rev_weights,
@@ -299,7 +339,7 @@ def n_people_communicate(n_people, n_sent,
             # update listeners
             for l in selected_people:
                 if l != speaker:
-                    population[l].add_rev_weights_with_pressure(spoken_word_order[0])
+                    population[l].add_rev_weights(spoken_word_order[0])
 
 
 # Population communication
@@ -329,7 +369,7 @@ def random_groups_communication(population, number_of_groups, n_sent):
         n_people_communicate(len(group), n_sent, group)
 
 
-#n_groups_communicate(100, 20, 500, newly_whole_population)
+# n_groups_communicate(100, 20, 500, newly_whole_population)
 
 
 def population_final_word_orders(population, ttle):
@@ -341,75 +381,70 @@ def population_final_word_orders(population, ttle):
         # print(people.irrev_weights)
         REV_LIST.extend(generate_word_order_list(basic_orders, people.rev_weights, 100))
         # print(people.rev_weights)
-        #plt.hist(IRREV_LIST)
-        #plt.hist(REV_LIST)
+        # plt.hist(IRREV_LIST)
+        # plt.hist(REV_LIST)
 
     plot_freq_list(IRREV_LIST, ttle + " irrev")
     plot_freq_list(REV_LIST, ttle + " rev")
 
 
 def population_personality(population, ttle):
-  personality_list = []
+    personality_list = []
 
+    for people in population:
+        personality_list.extend(people.personality)
 
-  for people in population:
-    personality_list.extend(people.personality)
-
-
-  plot_freq_list(personality_list, ttle)
+    plot_freq_list(personality_list, ttle)
 
 
 def pos_generation_range(n_gen, n_range):
-  possible_ranges = []
-  for i in range(n_gen-n_range+2):
-    l = []
-    for j in range(n_range):
-      l.append(i+j)
-    possible_ranges.append(l)
+    possible_ranges = []
+    for i in range(n_gen - n_range + 2):
+        l = []
+        for j in range(n_range):
+            l.append(i + j)
+        possible_ranges.append(l)
 
-  return possible_ranges
+    return possible_ranges
 
 
 def select_agents_of_given_gen_range(population, rnge):
-  community_index = []
-  for index in range(len(population)):
-    if population[index].generation in rnge:
-      community_index.append(index)
-  return community_index
+    community_index = []
+    for index in range(len(population)):
+        if population[index].generation in rnge:
+            community_index.append(index)
+    return community_index
 
 
 def main_simulation():
     TOTAL_POP = []
-    population_first_gen = make_first_gen_agents(20)
+    population_first_gen = make_first_gen_agents(20) # create first community with 20 agents
+    population_final_word_orders(population_first_gen, "population final word orders")
 
-    ############# COMMUNICATIONS HERE #############
-    n_groups_communicate(100, 50, 1000, population_first_gen)
+    ############# COMMUNICATIONS #############
+    n_groups_communicate(100, 50, 10000, population_first_gen)  # n_group: group number
+                                                                # n_people: max people in a group,
+                                                                # n_sent: number of sentences to speak,
+                                                                # population: current population to communicate
 
     TOTAL_POP.extend(population_first_gen)
+
     ############# CHILDREN #############
     last_gen = population_first_gen
 
-    for i in range(10):
-        new_gen = create_generation(last_gen)
-        last_gen = new_gen
-        TOTAL_POP.extend(new_gen)
-        TOTAL_POP = list(filter(lambda person: person.generation >= i-3, TOTAL_POP))
-        n_groups_communicate(100, 50, 1000, TOTAL_POP)
-        population_final_word_orders(TOTAL_POP, "population final word orders")
-        population_personality(TOTAL_POP, "population personality list")
+    for i in range(10): #create 10 generations
+        new_gen = create_generation(last_gen) #create a new generation from last generation
+        last_gen = new_gen #make new generation last generation
+        TOTAL_POP.extend(new_gen) #extend total population with last generation
+        TOTAL_POP = list(filter(lambda person: person.generation >= i - 4, TOTAL_POP)) #filter out except last 4 generations
+        n_groups_communicate(100, 50, 10000, TOTAL_POP) #communicate current living population
+        population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
+        population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
     ############# PRINT FINAL WORD ORDERS WITH A RANGE #############
 
-    population_final_word_orders(TOTAL_POP, "population final word orders")
-    population_personality(TOTAL_POP, "population personality list")
-
+    population_final_word_orders(TOTAL_POP, "population final word orders") #print last 4 generations w.o.'s
+    population_personality(TOTAL_POP, "population personality list") #print last 4 generations personalities
 
 
 main_simulation()
-
-
-
-
-
-
-
