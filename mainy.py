@@ -33,6 +33,7 @@ stop = 3
 starting_irrev_bias = [1, 1, 1, 1, 1, 1]
 starting_rev_bias = [1, 1, 1, 1, 1, 1]
 
+error_or_pressure_rate = 0.001
 
 class Agent:
 
@@ -51,7 +52,7 @@ class Agent:
         weight = []
         for i in basic_orders:
             if order == i or i == 'SVO':
-                weight.append(0.001)  # if the used/given order is what it is, than add 1 to the weight
+                weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
         return weight
@@ -60,7 +61,7 @@ class Agent:
         weight = []
         for i in basic_orders:
             if order == i or i == 'SOV':
-                weight.append(0.001)  # if the used/given order is what it is, than add 1 to the weight
+                weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
         return weight
@@ -69,7 +70,7 @@ class Agent:
         weight = []
         for i in basic_orders:
             if order == i or i == 'SOV':
-                weight.append(0.001)  # add 1 to the corresponding word order's place
+                weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
         return weight
@@ -78,7 +79,7 @@ class Agent:
         weight = []
         for i in basic_orders:
             if order == i or i == 'SVO':
-                weight.append(0.001)  # add 1 to the corresponding word order's place
+                weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
         return weight
@@ -87,9 +88,9 @@ class Agent:
         weight = []
         for i in basic_orders:
             if order == i or i == 'SOV':
-                weight.append(0.001)  # add 1 to the used word order
+                weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
-                weight.append(-0.001)  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
         return weight
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
@@ -151,7 +152,7 @@ class Agent:
 
 # print agents
 def print_agent(agent):
-    return [agent.generation, agent.personality, agent.ling, agent.irrev_weights, agent.rev_weights]
+    return [agent.generation, agent.personality, agent.irrev_weights, agent.rev_weights]
 
 
 def make_first_gen_agents(N):  # create N number of agents with different random personalities
@@ -210,7 +211,7 @@ def create_generation(prev_generation_pop):
     for p in pairs:
         children_number = calculate_average_children_number_per_family(population_length)
         next_gen.extend(create_children(prev_generation_pop[p[0]], prev_generation_pop[p[1]], children_number))
-    # print(len(next_gen))
+    #print(len(next_gen))
     return next_gen
 
 
@@ -348,7 +349,7 @@ def n_groups_communicate(n_group, n_people, n_sent, population):
     number_of_peoples_in_groups = []
     for g in range(n_group):
         number_of_peoples_in_groups.append(random.randint(2, min(len(population), n_people)))
-    print(number_of_peoples_in_groups)
+    #print(number_of_peoples_in_groups)
 
     for groups in number_of_peoples_in_groups:
         n_people_communicate(groups, n_sent, population)
@@ -437,9 +438,9 @@ def main_simulation():
         last_gen = new_gen #make new generation last generation
         TOTAL_POP.extend(new_gen) #extend total population with last generation
         TOTAL_POP = list(filter(lambda person: person.generation >= i - 4, TOTAL_POP)) #filter out except last 4 generations
-        n_groups_communicate(100, 50, 10000, TOTAL_POP) #communicate current living population
+        n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
         population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
-        population_personality(TOTAL_POP, "population personality list") #print current personality rate
+        #population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
     ############# PRINT FINAL WORD ORDERS WITH A RANGE #############
 
