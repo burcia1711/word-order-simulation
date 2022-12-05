@@ -28,10 +28,10 @@ basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS',
 # for children making process
 start = 1
 stop = 3
-
+MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
 starting_irrev_bias = [1, 1, 1, 1, 1, 1]
-starting_rev_bias = [1, 1, 1, 1, 1, 1]
+starting_rev_bias = [7, 1, 1, 1, 1, 1]
 
 error_or_pressure_rate = 0.001
 
@@ -372,6 +372,48 @@ def random_groups_communication(population, number_of_groups, n_sent):
 
 # n_groups_communicate(100, 20, 500, newly_whole_population)
 
+# def one_to_many_network_communication(n_people, n_sent, population):
+
+
+def group_communication_all_population_speaks(n_sent, population):
+    groups = create_groups_from_all_population_members(population)
+    for group in groups:
+        group_communication_all_participants_speak(group, n_sent,population)
+
+
+def create_groups_from_all_population_members(population):
+    groups = []
+    population_indices = list(range(0, len(population), 1))
+    while len(population_indices) != 0:
+        if len(population_indices) <= 3:
+            sample = population_indices
+        else:
+            sample = random.sample(population_indices, random.randint(2, min(len(population_indices), MAX_GROUP_SIZE)))
+        groups.append(sample)
+        population_indices = list(filter(lambda x: x not in sample, population_indices))
+
+    return groups
+
+
+def group_communication_all_participants_speak(group_members_indices, n_sent_each, population):
+    for speaker in group_members_indices:
+        for listener in group_members_indices:
+            if speaker != listener:
+                sentence_list = make_utterance(n_sent_each)
+                for sent in sentence_list:
+                    if sent == 'irreversible':
+                        spoken_word_order = generate_word_order_list(basic_orders, population[speaker].irrev_weights,
+                                                                     1)  # generate a word order for given sentence
+                        # update listeners
+                        population[listener].add_irrev_weights_with_pressure(spoken_word_order[0])
+
+                    else:
+                        spoken_word_order = generate_word_order_list(basic_orders, population[speaker].rev_weights,
+                                                                     1)  # generate a word order for given sentence
+                        # update listeners
+
+                        population[listener].add_rev_weights_with_pressure(spoken_word_order[0])
+
 
 def population_final_word_orders(population, ttle):
     IRREV_LIST = []
@@ -417,35 +459,36 @@ def select_agents_of_given_gen_range(population, rnge):
     return community_index
 
 
+
 def main_simulation():
     TOTAL_POP = []
     population_first_gen = make_first_gen_agents(20) # create first community with 20 agents
     population_final_word_orders(population_first_gen, "population final word orders")
 
     ############# COMMUNICATIONS #############
-    n_groups_communicate(100, 50, 10000, population_first_gen)  # n_group: group number
+    #n_groups_communicate(100, 50, 10000, population_first_gen)  # n_group: group number
                                                                 # n_people: max people in a group,
                                                                 # n_sent: number of sentences to speak,
                                                                 # population: current population to communicate
-
+    group_communication_all_population_speaks(200, population_first_gen)
     TOTAL_POP.extend(population_first_gen)
 
     ############# CHILDREN #############
     last_gen = population_first_gen
 
-    for i in range(10): #create 10 generations
+    for i in range(50): #create 10 generations
         new_gen = create_generation(last_gen) #create a new generation from last generation
         last_gen = new_gen #make new generation last generation
         TOTAL_POP.extend(new_gen) #extend total population with last generation
         TOTAL_POP = list(filter(lambda person: person.generation >= i - 4, TOTAL_POP)) #filter out except last 4 generations
-        n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
-        population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
+        #n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
+        group_communication_all_population_speaks(200, TOTAL_POP)
+        #population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
         #population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
     ############# PRINT FINAL WORD ORDERS WITH A RANGE #############
 
     population_final_word_orders(TOTAL_POP, "population final word orders") #print last 4 generations w.o.'s
     population_personality(TOTAL_POP, "population personality list") #print last 4 generations personalities
-
 
 main_simulation()
