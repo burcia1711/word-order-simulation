@@ -40,7 +40,7 @@ class Agent:
     def __init__(self, g, p, l, mother=None, father=None):  # First agent has no parent, children will.
         self.generation = g
         self.personality = p
-        self.ling = l
+        #self.ling = l
         if mother == None and father == None:  # first generation, starting point
             self.irrev_weights = starting_irrev_bias
             self.rev_weights = starting_rev_bias
