@@ -19,11 +19,12 @@ set_matplotlib_formats('svg', 'pdf')
 personalities = ['F', 'S']  # F for flexible, S for stubborn
 
 sentence_type = ['reversible', 'irreversible']  # two kinds of sentences
-sentence_weights = [7,
-                    3]  # humans use more reversible sentences than irreversible ones, so, weights should be different
+sentence_weights = [7, 3]  # humans use more reversible sentences than irreversible ones, so,
+                           # weights should be different
 
-basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS',
-                'VSO']  # possible 6 orders for basic sentences, maybe "no order/other" can be added
+
+basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS', 'VSO']  # possible 6 orders for basic sentences,
+                                                           # maybe "no order/other" can be added
 
 # for children making process
 start = 1
@@ -32,9 +33,10 @@ MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
 starting_irrev_bias = [1, 1, 1, 1, 1, 1]
 starting_rev_bias = [7, 1, 1, 1, 1, 1]
-
+tendency = [3, 8, 410, 350, 20, 70]
 error_or_pressure_rate = 0.001
 
+TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
 class Agent:
 
     def __init__(self, g, p, l, mother=None, father=None):  # First agent has no parent, children will.
@@ -51,7 +53,7 @@ class Agent:
     def new_weight_rev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SVO':
+            if order == i or i == 'TEND_COM':
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -60,7 +62,7 @@ class Agent:
     def new_weight_irrev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SOV':
+            if order == i or i == 'TEND_COM':
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -69,7 +71,7 @@ class Agent:
     def new_weight_with_error_irrev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SOV':
+            if order == i or i == 'TEND_COM':
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -78,7 +80,7 @@ class Agent:
     def new_weight_with_error_rev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SVO':
+            if order == i or i == 'TEND_COM':
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -87,7 +89,7 @@ class Agent:
     def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SOV':
+            if order == i or i == 'TEND_COM':
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -96,7 +98,7 @@ class Agent:
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
         for i in basic_orders:
-            if order == i or i == 'SVO':
+            if order == i or i == 'TEND_COMs':
                 weight.append(0.001)  # add 1 to the used word order
             else:
                 weight.append(-0.001)  # add -1 to weights of non-used word orders
