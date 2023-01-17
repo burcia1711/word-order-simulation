@@ -1,16 +1,9 @@
 # necessary libraries
 
 import random
-from copy import deepcopy
-from numpy.random import normal
-import numpy
-from scipy.stats import beta
-from scipy.special import logsumexp
-from math import log, log1p, exp
 from collections import Counter
 import pandas
 
-# %matplotlib inline
 import matplotlib.pyplot as plt
 from IPython.display import set_matplotlib_formats
 
@@ -19,12 +12,11 @@ set_matplotlib_formats('svg', 'pdf')
 personalities = ['F', 'S']  # F for flexible, S for stubborn
 
 sentence_type = ['reversible', 'irreversible']  # two kinds of sentences
-sentence_weights = [7, 3]  # humans use more reversible sentences than irreversible ones, so,
-                           # weights should be different
+sentence_weights = [7,
+                    3]  # humans use more reversible sentences than irreversible ones, so, weights should be different
 
-
-basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS', 'VSO']  # possible 6 orders for basic sentences,
-                                                           # maybe "no order/other" can be added
+basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS',
+                'VSO']  # possible 6 orders for basic sentences, maybe "no order/other" can be added
 
 # for children making process
 start = 1
@@ -32,18 +24,19 @@ stop = 3
 MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
 starting_irrev_bias = [1, 1, 1, 1, 1, 1]
-starting_rev_bias = [7, 1, 1, 1, 1, 1]
+starting_rev_bias = [1, 1, 1, 1, 1, 1]
 tendency = [3, 8, 410, 350, 20, 70]
-error_or_pressure_rate = 0.001
+error_or_pressure_rate = 0.01
 
 TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
+
+
 class Agent:
 
-    def __init__(self, g, p, l, mother=None, father=None):  # First agent has no parent, children will.
+    def __init__(self, g, p, mother=None, father=None):  # First agent has no parent, children will.
         self.generation = g
         self.personality = p
-        #self.ling = l
-        if mother == None and father == None:  # first generation, starting point
+        if mother is None and father is None:  # first generation, starting point
             self.irrev_weights = starting_irrev_bias
             self.rev_weights = starting_rev_bias
         else:  # if it is a child, mother & father should affect
@@ -53,7 +46,7 @@ class Agent:
     def new_weight_rev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COM':
+            if order == i or i == TEND_COM:
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -62,7 +55,7 @@ class Agent:
     def new_weight_irrev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COM':
+            if order == i or i == TEND_COM:
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -71,7 +64,7 @@ class Agent:
     def new_weight_with_error_irrev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COM':
+            if order == i or i == TEND_COM:
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -80,7 +73,7 @@ class Agent:
     def new_weight_with_error_rev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COM':
+            if order == i or i == TEND_COM:
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -89,7 +82,7 @@ class Agent:
     def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COM':
+            if order == i or i == TEND_COM:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -98,10 +91,10 @@ class Agent:
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
         for i in basic_orders:
-            if order == i or i == 'TEND_COMs':
-                weight.append(0.001)  # add 1 to the used word order
+            if order == i or i == TEND_COM:
+                weight.append(0.1)  # add 1 to the used word order
             else:
-                weight.append(-0.001)  # add -1 to weights of non-used word orders
+                weight.append(-0.1)  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -162,14 +155,14 @@ def make_first_gen_agents(N):  # create N number of agents with different random
     population = []
 
     for i in range(N):
-        l = random.randint(0, 1)
         p = random.randint(0, 1)
-        agent = Agent(gen, personalities[p], l)
+        agent = Agent(gen, personalities[p])
         population.append(agent)
 
     # for obj in population:
     # print(obj.rev_weights)
 
+    print(TEND_COM)
     return population
 
 
@@ -177,9 +170,8 @@ def create_children(mother, father,
                     number_of_children):  # create children of given mother and father, with the given number of children
     children = []
     for i in range(number_of_children):
-        l = random.randint(0, 1)
         p = random.randint(0, 1)
-        child = Agent(mother.generation + 1, personalities[p], l, mother, father)
+        child = Agent(mother.generation + 1, personalities[p], mother, father)
         children.append(child)
     return children
 
@@ -213,16 +205,16 @@ def create_generation(prev_generation_pop):
     for p in pairs:
         children_number = calculate_average_children_number_per_family(population_length)
         next_gen.extend(create_children(prev_generation_pop[p[0]], prev_generation_pop[p[1]], children_number))
-    #print(len(next_gen))
+    # print(len(next_gen))
     return next_gen
 
 
 # tt = []
 # tt.extend(make_first_gen_agents(15))
-##print(tt)
+# print(tt)
 # newly_whole_population = []
 # newly_whole_population.extend(tt)
-##print(len(newly_whole_population))
+# print(len(newly_whole_population))
 # for i in range(10):
 #  current_prev = tt[:]
 #  #print(f"current prev {current_prev}")
@@ -231,8 +223,8 @@ def create_generation(prev_generation_pop):
 #  print(len(newly_whole_population))
 
 
-def plot_freq_list(l, ttle):
-    count = Counter(sorted(l))
+def plot_freq_list(lst, ttle):
+    count = Counter(sorted(lst))
     df = pandas.DataFrame.from_dict(count, orient='index')
     df.plot(kind='bar')
     plt.title(ttle)
@@ -254,10 +246,10 @@ def make_utterance(n):
     return random.choices(sentence_type, weights=sentence_weights, k=n)
 
 
-# utterence_list =[]
-# utterence_list = make_utterance(500)
+# utterance_list =[]
+# utterance_list = make_utterance(500)
 
-# plot_freq_list(utterence_list, "sentences")
+# plot_freq_list(utterance_list, "sentences")
 # plot_freq_list(IRREV_WORD_ORDER_LIST, "irrev")
 # plot_freq_list(REV_WORD_ORDER_LIST, "rev")
 
@@ -282,11 +274,7 @@ def select_two_random_persons(population):
 
 
 def select_n_random_persons(n_people, population):
-    people_selected = []
     people_indices = random.sample(range(0, len(population)), n_people)
-    # print(people_indices)
-    # people_selected = [population[i] for i in people_indices]
-
     return people_indices
 
 
@@ -351,7 +339,7 @@ def n_groups_communicate(n_group, n_people, n_sent, population):
     number_of_peoples_in_groups = []
     for g in range(n_group):
         number_of_peoples_in_groups.append(random.randint(2, min(len(population), n_people)))
-    #print(number_of_peoples_in_groups)
+    # print(number_of_peoples_in_groups)
 
     for groups in number_of_peoples_in_groups:
         n_people_communicate(groups, n_sent, population)
@@ -380,7 +368,7 @@ def random_groups_communication(population, number_of_groups, n_sent):
 def group_communication_all_population_speaks(n_sent, population):
     groups = create_groups_from_all_population_members(population)
     for group in groups:
-        group_communication_all_participants_speak(group, n_sent,population)
+        group_communication_all_participants_speak(group, n_sent, population)
 
 
 def create_groups_from_all_population_members(population):
@@ -461,36 +449,37 @@ def select_agents_of_given_gen_range(population, rnge):
     return community_index
 
 
-
 def main_simulation():
     TOTAL_POP = []
-    population_first_gen = make_first_gen_agents(20) # create first community with 20 agents
-    population_final_word_orders(population_first_gen, "population final word orders")
+    population_first_gen = make_first_gen_agents(25)  # create first community with 20 agents
+    population_final_word_orders(population_first_gen, "population first word orders")
 
     ############# COMMUNICATIONS #############
-    #n_groups_communicate(100, 50, 10000, population_first_gen)  # n_group: group number
-                                                                # n_people: max people in a group,
-                                                                # n_sent: number of sentences to speak,
-                                                                # population: current population to communicate
+    # n_groups_communicate(100, 50, 10000, population_first_gen)  # n_group: group number
+    # n_people: max people in a group,
+    # n_sent: number of sentences to speak,
+    # population: current population to communicate
     group_communication_all_population_speaks(200, population_first_gen)
     TOTAL_POP.extend(population_first_gen)
 
     ############# CHILDREN #############
     last_gen = population_first_gen
 
-    for i in range(50): #create 10 generations
-        new_gen = create_generation(last_gen) #create a new generation from last generation
-        last_gen = new_gen #make new generation last generation
-        TOTAL_POP.extend(new_gen) #extend total population with last generation
-        TOTAL_POP = list(filter(lambda person: person.generation >= i - 4, TOTAL_POP)) #filter out except last 4 generations
-        #n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
+    for i in range(10):  # create 10 generations
+        new_gen = create_generation(last_gen)  # create a new generation from last generation
+        last_gen = new_gen  # make new generation last generation
+        TOTAL_POP.extend(new_gen)  # extend total population with last generation
+        TOTAL_POP = list(
+            filter(lambda person: person.generation >= i - 4, TOTAL_POP))  # filter out except last 4 generations
+        # n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
         group_communication_all_population_speaks(200, TOTAL_POP)
-        #population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
-        #population_personality(TOTAL_POP, "population personality list") #print current personality rate
+        # population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
+        # population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
     ############# PRINT FINAL WORD ORDERS WITH A RANGE #############
 
-    population_final_word_orders(TOTAL_POP, "population final word orders") #print last 4 generations w.o.'s
-    population_personality(TOTAL_POP, "population personality list") #print last 4 generations personalities
+    population_final_word_orders(TOTAL_POP, "population final word orders")  # print last 4 generations w.o.'s
+    population_personality(TOTAL_POP, "population personality list")  # print last 4 generations personalities
+
 
 main_simulation()
