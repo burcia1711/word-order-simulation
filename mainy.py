@@ -23,13 +23,22 @@ start = 1
 stop = 3
 MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
-starting_irrev_bias = [1, 1, 1, 1, 1, 1]
-starting_rev_bias = [1, 1, 1, 1, 1, 1]
+uniformIRREV = [100, 100, 100, 100, 100, 100]
+uniformREV = [100, 100, 100, 100, 100, 100]
+
+RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
+RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
+
+starting_irrev_bias = RANDOM_IRREV_BIAS
+starting_rev_bias = RANDOM_REV_BIAS
+
+
 tendency = [3, 8, 410, 350, 20, 70]
-error_or_pressure_rate = 0.01
+error_or_pressure_rate = 0.001
 
 TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
-
+TEND_REV = 'SVO'
+TEND_IRREV = 'SOV'
 
 class Agent:
 
@@ -46,7 +55,7 @@ class Agent:
     def new_weight_rev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == TEND_COM:
+            if order == i or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -55,7 +64,7 @@ class Agent:
     def new_weight_irrev(self, order):  # for updating the stubborn agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == TEND_COM:
+            if order == i or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
             else:
                 weight.append(0)  # if it is not, add 0 (nothing)
@@ -64,7 +73,7 @@ class Agent:
     def new_weight_with_error_irrev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == TEND_COM:
+            if order == i or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -73,7 +82,7 @@ class Agent:
     def new_weight_with_error_rev(self, order):  # for updating the flexible agent's word order weights
         weight = []
         for i in basic_orders:
-            if order == i or i == TEND_COM:
+            if order == i or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
             else:
                 weight.append(random.uniform(-1, 1))  # there should be a error
@@ -81,8 +90,9 @@ class Agent:
 
     def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
         weight = []
+        error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i or i == TEND_COM:
+            if order == i or i == TEND_COM[0] or i == TEND_IRREV:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -90,11 +100,12 @@ class Agent:
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
+        error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i or i == TEND_COM:
-                weight.append(0.1)  # add 1 to the used word order
+            if order == i or i == TEND_COM[0] or i == TEND_REV:
+                weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
-                weight.append(-0.1)  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -459,7 +470,7 @@ def main_simulation():
     # n_people: max people in a group,
     # n_sent: number of sentences to speak,
     # population: current population to communicate
-    group_communication_all_population_speaks(200, population_first_gen)
+    group_communication_all_population_speaks(10000, population_first_gen)
     TOTAL_POP.extend(population_first_gen)
 
     ############# CHILDREN #############
@@ -472,7 +483,7 @@ def main_simulation():
         TOTAL_POP = list(
             filter(lambda person: person.generation >= i - 4, TOTAL_POP))  # filter out except last 4 generations
         # n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
-        group_communication_all_population_speaks(200, TOTAL_POP)
+        group_communication_all_population_speaks(1000, TOTAL_POP)
         # population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
         # population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
