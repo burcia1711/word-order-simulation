@@ -23,22 +23,30 @@ start = 1
 stop = 3
 MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
-uniformIRREV = [100, 100, 100, 100, 100, 100]
-uniformREV = [100, 100, 100, 100, 100, 100]
+uniformIRREV = [1] * 6
+uniformREV = [1] * 6
 
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
+
+coeff = 1
+REV_BIAS = [1, 1, 1, 5, 1, 1]
+REV_BIAS = [i * coeff for i in REV_BIAS]
+IRREV_BIAS = [1, 1, 5, 1, 1, 1]
+IRREV_BIAS = [i * coeff for i in IRREV_BIAS]
+
 
 starting_irrev_bias = RANDOM_IRREV_BIAS
 starting_rev_bias = RANDOM_REV_BIAS
 
 
 tendency = [3, 8, 410, 350, 20, 70]
-error_or_pressure_rate = 0.001
+error_or_pressure_rate = 0.00001
 
 TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
-TEND_REV = 'SVO'
-TEND_IRREV = 'SOV'
+TEND_REV = 'SVO'  # what we know
+TEND_IRREV = 'SOV'  # what we know
+
 
 class Agent:
 
@@ -90,9 +98,9 @@ class Agent:
 
     def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
         weight = []
-        error_or_pressure_rate = random.uniform(0, 0.01)
+        # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i or i == TEND_COM[0] or i == TEND_IRREV:
+            if order == i:  # or i == TEND_COM[0] or i == TEND_IRREV:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -100,9 +108,9 @@ class Agent:
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
-        error_or_pressure_rate = random.uniform(0, 0.01)
+        # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i or i == TEND_COM[0] or i == TEND_REV:
+            if order == i:  # or i == TEND_COM[0] or i == TEND_REV:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -407,6 +415,7 @@ def group_communication_all_participants_speak(group_members_indices, n_sent_eac
                                                                      1)  # generate a word order for given sentence
                         # update listeners
                         population[listener].add_irrev_weights_with_pressure(spoken_word_order[0])
+                        population[speaker].add_irrev_weights_with_pressure(spoken_word_order[0])
 
                     else:
                         spoken_word_order = generate_word_order_list(basic_orders, population[speaker].rev_weights,
@@ -414,6 +423,7 @@ def group_communication_all_participants_speak(group_members_indices, n_sent_eac
                         # update listeners
 
                         population[listener].add_rev_weights_with_pressure(spoken_word_order[0])
+                        population[speaker].add_rev_weights_with_pressure(spoken_word_order[0])
 
 
 def population_final_word_orders(population, ttle):
@@ -470,7 +480,7 @@ def main_simulation():
     # n_people: max people in a group,
     # n_sent: number of sentences to speak,
     # population: current population to communicate
-    group_communication_all_population_speaks(10000, population_first_gen)
+    group_communication_all_population_speaks(100, population_first_gen)
     TOTAL_POP.extend(population_first_gen)
 
     ############# CHILDREN #############
