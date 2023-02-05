@@ -36,8 +36,8 @@ IRREV_BIAS = [1, 1, 5, 1, 1, 1]
 IRREV_BIAS = [i * coeff for i in IRREV_BIAS]
 
 
-starting_irrev_bias = RANDOM_IRREV_BIAS
-starting_rev_bias = RANDOM_REV_BIAS
+starting_irrev_bias = IRREV_BIAS
+starting_rev_bias = REV_BIAS
 
 
 tendency = [3, 8, 410, 350, 20, 70]
@@ -100,7 +100,7 @@ class Agent:
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i:  # or i == TEND_COM[0] or i == TEND_IRREV:
+            if order == i: # or i == TEND_COM[0]: #or i == TEND_IRREV:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -110,7 +110,7 @@ class Agent:
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i:  # or i == TEND_COM[0] or i == TEND_REV:
+            if order == i: # or i == TEND_COM[0]: # or i == TEND_REV:
                 weight.append(error_or_pressure_rate)  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
@@ -245,7 +245,7 @@ def create_generation(prev_generation_pop):
 def plot_freq_list(lst, ttle):
     count = Counter(sorted(lst))
     df = pandas.DataFrame.from_dict(count, orient='index')
-    df.plot(kind='bar')
+    df.plot(kind='bar', color="plum")
     plt.title(ttle)
     plt.show()
 
@@ -480,7 +480,7 @@ def main_simulation():
     # n_people: max people in a group,
     # n_sent: number of sentences to speak,
     # population: current population to communicate
-    group_communication_all_population_speaks(100, population_first_gen)
+    group_communication_all_population_speaks(1000, population_first_gen)
     TOTAL_POP.extend(population_first_gen)
 
     ############# CHILDREN #############
@@ -493,7 +493,7 @@ def main_simulation():
         TOTAL_POP = list(
             filter(lambda person: person.generation >= i - 4, TOTAL_POP))  # filter out except last 4 generations
         # n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
-        group_communication_all_population_speaks(1000, TOTAL_POP)
+        group_communication_all_population_speaks(5000, TOTAL_POP)
         # population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
         # population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
