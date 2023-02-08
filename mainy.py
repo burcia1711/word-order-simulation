@@ -29,15 +29,20 @@ uniformREV = [1] * 6
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
 
+k = 1
+n = 25  # a group
+error = 10
+
 coeff = 1
+
 REV_BIAS = [1, 1, 1, 5, 1, 1]
 REV_BIAS = [i * coeff for i in REV_BIAS]
 IRREV_BIAS = [1, 1, 5, 1, 1, 1]
 IRREV_BIAS = [i * coeff for i in IRREV_BIAS]
 
 
-starting_irrev_bias = IRREV_BIAS
-starting_rev_bias = REV_BIAS
+starting_irrev_bias = RANDOM_IRREV_BIAS
+starting_rev_bias = RANDOM_REV_BIAS
 
 
 tendency = [3, 8, 410, 350, 20, 70]
@@ -100,20 +105,20 @@ class Agent:
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i: # or i == TEND_COM[0]: #or i == TEND_IRREV:
-                weight.append(error_or_pressure_rate)  # add 1 to the used word order
+            if order == i or i == TEND_COM[0]: #or i == TEND_IRREV:
+                weight.append(error_or_pressure_rate*(error**k)) # add 1 to the used word order
             else:
-                weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
         return weight
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if order == i: # or i == TEND_COM[0]: # or i == TEND_REV:
-                weight.append(error_or_pressure_rate)  # add 1 to the used word order
+            if order == i  or i == TEND_COM[0]: # or i == TEND_REV:
+                weight.append(error_or_pressure_rate*(error**k))  # add 1 to the used word order
             else:
-                weight.append(-error_or_pressure_rate)  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -245,7 +250,7 @@ def create_generation(prev_generation_pop):
 def plot_freq_list(lst, ttle):
     count = Counter(sorted(lst))
     df = pandas.DataFrame.from_dict(count, orient='index')
-    df.plot(kind='bar', color="plum")
+    df.plot(kind='bar', color="violet")
     plt.title(ttle)
     plt.show()
 
@@ -472,7 +477,7 @@ def select_agents_of_given_gen_range(population, rnge):
 
 def main_simulation():
     TOTAL_POP = []
-    population_first_gen = make_first_gen_agents(25)  # create first community with 20 agents
+    population_first_gen = make_first_gen_agents(k*n)  # create first community with 20 agents
     population_final_word_orders(population_first_gen, "population first word orders")
 
     ############# COMMUNICATIONS #############
