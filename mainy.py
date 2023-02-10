@@ -23,8 +23,7 @@ start = 1
 stop = 3
 MAX_GROUP_SIZE = 7
 # starting bias weights for corresponding word order in basic_orders
-uniformIRREV = [1] * 6
-uniformREV = [1] * 6
+
 
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
@@ -33,16 +32,17 @@ k = 2
 n = 25  # a group
 error = 10
 
-coeff = 1
-
-REV_BIAS = [1, 1, 1, 5, 1, 1]
+coeff = 50
+uniformIRREV = [coeff] * 6
+uniformREV = [coeff] * 6
+REV_BIAS = [5, 1, 1, 1, 1, 5]
 REV_BIAS = [i * coeff for i in REV_BIAS]
-IRREV_BIAS = [1, 1, 5, 1, 1, 1]
+IRREV_BIAS = [1, 5, 1, 1, 1, 1]
 IRREV_BIAS = [i * coeff for i in IRREV_BIAS]
 
 
-starting_irrev_bias = REV_BIAS
-starting_rev_bias = IRREV_BIAS
+starting_irrev_bias = uniformIRREV
+starting_rev_bias = uniformREV
 
 
 tendency = [3, 8, 410, 350, 20, 70]
@@ -105,7 +105,7 @@ class Agent:
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if i == order or i == TEND_COM[0]:  # or i == TEND_IRREV:
+            if i == order or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate*(error**k)) # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
@@ -115,14 +115,19 @@ class Agent:
         weight = []
         # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
-            if i == order or i == TEND_COM[0]:  # or i == TEND_REV:
+            if i == order or i == TEND_COM[0]:
                 weight.append(error_or_pressure_rate*(error**k))  # add 1 to the used word order
             else:
                 weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
-        res_lt = [l1[x] + l2[x] for x in range(len(l1))]
+        res_lt = []
+        for x in range(len(l1)):
+            if l1[x] <= 0:
+                res_lt.append(0)
+            else:
+                res_lt.append(l1[x] + l2[x])
         return res_lt
 
     def list_average(self, l1, l2):  # for averaging mother and father's weights
