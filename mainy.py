@@ -28,7 +28,7 @@ MAX_GROUP_SIZE = 7
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
 
-k = 2
+k = 3
 n = 25  # a group
 error = 10
 
