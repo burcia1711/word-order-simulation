@@ -1,124 +1,113 @@
 # necessary libraries
-
 import random
 from collections import Counter
 import pandas
-
 import matplotlib.pyplot as plt
 from IPython.display import set_matplotlib_formats
-
 set_matplotlib_formats('svg', 'pdf')
 
 personalities = ['F', 'S']  # F for flexible, S for stubborn
-
 sentence_type = ['reversible', 'irreversible']  # two kinds of sentences
-sentence_weights = [7,
-                    3]  # humans use more reversible sentences than irreversible ones, so, weights should be different
+sentence_weights = [7, 3]  # humans use more reversible sentences than irreversible ones, so, weights should be different
 
-basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS',
-                'VSO']  # possible 6 orders for basic sentences, maybe "no order/other" can be added
+basic_orders = ['OSV', 'OVS', 'SOV', 'SVO', 'VOS', 'VSO']  # possible 6 orders for basic sentences, maybe "no order/other" can be added
 
 # for children making process
 start = 1
 stop = 3
 MAX_GROUP_SIZE = 7
+
 # starting bias weights for corresponding word order in basic_orders
-
-
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
 
-k = 3
-n = 25  # a group
-error = 10
+k = 2  # factor
+n = 25  # number of people in one starting group
 
-coeff = 50
-uniformIRREV = [coeff] * 6
-uniformREV = [coeff] * 6
-REV_BIAS = [5, 1, 1, 1, 1, 5]
-REV_BIAS = [i * coeff for i in REV_BIAS]
+error = 10  # add to the weights
+personality_weight = [2, 8]
+coeff_stubborn = 10
+coeff_flexible = 1
+error_or_pressure_rate = 0.00001  # mesh
+# 0.000001  # star
+# 0.0000001  # one-to-one
+# 0.00001  # mesh
+
+BIAS_TYPE = "uniform"
+uniformIRREV = []
+uniformREV = []
+REV_BIAS = [1, 1, 1, 1, 1, 5]
 IRREV_BIAS = [1, 5, 1, 1, 1, 1]
-IRREV_BIAS = [i * coeff for i in IRREV_BIAS]
 
-
-starting_irrev_bias = uniformIRREV
-starting_rev_bias = uniformREV
-
-
-tendency = [3, 8, 410, 350, 20, 70]
-error_or_pressure_rate = 0.00001
-
+tendency = [3, 8, 410, 350, 20, 70]  # world's current distribution
 TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
 TEND_REV = 'SVO'  # what we know
 TEND_IRREV = 'SOV'  # what we know
 
 
-class Agent:
+def form_irrev_weight(personality, bias_type):
+    if bias_type == "uniform":
+        if personality == "F":
+            return [coeff_flexible] * 6
+        elif personality == "S":
+            return [coeff_stubborn] * 6
+    elif bias_type == "biased":
+        if personality == "F":
+            return [i * coeff_flexible for i in REV_BIAS]
+        elif personality == "S":
+            return [i * coeff_stubborn for i in IRREV_BIAS]
+    elif bias_type == "random":
+        if personality == "F":
+            return [i * coeff_flexible for i in random.sample(range(0, 10), 6)]
+        elif personality == "S":
+            return [i * coeff_stubborn for i in random.sample(range(0, 10), 6)]
 
+
+def form_rev_weight(personality, bias_type):
+    if bias_type == "uniform":
+        if personality == "F":
+            return [coeff_flexible] * 6
+        elif personality == "S":
+            return [coeff_stubborn] * 6
+    elif bias_type == "biased":
+        if personality == "F":
+            return [i * coeff_flexible for i in REV_BIAS]
+        elif personality == "S":
+            return [i * coeff_stubborn for i in IRREV_BIAS]
+    elif bias_type == "random":
+        if personality == "F":
+            return [i * coeff_flexible for i in random.sample(range(0, 10), 6)]
+        elif personality == "S":
+            return [i * coeff_stubborn for i in random.sample(range(0, 10), 6)]
+
+
+class Agent:
     def __init__(self, g, p, mother=None, father=None):  # First agent has no parent, children will.
         self.generation = g
         self.personality = p
         if mother is None and father is None:  # first generation, starting point
-            self.irrev_weights = starting_irrev_bias
-            self.rev_weights = starting_rev_bias
+            self.irrev_weights = form_irrev_weight(p, BIAS_TYPE)
+            self.rev_weights = form_rev_weight(p, BIAS_TYPE)
         else:  # if it is a child, mother & father should affect
-            self.irrev_weights = self.set_irrev_weights(mother, father)
-            self.rev_weights = self.set_rev_weights(mother, father)
-
-    def new_weight_rev(self, order):  # for updating the stubborn agent's word order weights
-        weight = []
-        for i in basic_orders:
-            if order == i or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
-            else:
-                weight.append(0)  # if it is not, add 0 (nothing)
-        return weight
-
-    def new_weight_irrev(self, order):  # for updating the stubborn agent's word order weights
-        weight = []
-        for i in basic_orders:
-            if order == i or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate)  # if the used/given order is what it is, than add 1 to the weight
-            else:
-                weight.append(0)  # if it is not, add 0 (nothing)
-        return weight
-
-    def new_weight_with_error_irrev(self, order):  # for updating the flexible agent's word order weights
-        weight = []
-        for i in basic_orders:
-            if order == i or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
-            else:
-                weight.append(random.uniform(-1, 1))  # there should be a error
-        return weight
-
-    def new_weight_with_error_rev(self, order):  # for updating the flexible agent's word order weights
-        weight = []
-        for i in basic_orders:
-            if order == i or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate)  # add 1 to the corresponding word order's place
-            else:
-                weight.append(random.uniform(-1, 1))  # there should be a error
-        return weight
+            self.irrev_weights = self.list_summation(form_irrev_weight(p, BIAS_TYPE), self.set_irrev_weights(mother, father))
+            self.rev_weights = self.list_summation(form_rev_weight(p, BIAS_TYPE), self.set_rev_weights(mother, father))
 
     def new_weight_with_pressure_irrev(self, order):  # some pressures made us eliminate others
         weight = []
-        # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
             if i == order or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate*(error**k)) # add 1 to the used word order
+                weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
             else:
-                weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
         return weight
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
         weight = []
-        # error_or_pressure_rate = random.uniform(0, 0.01)
         for i in basic_orders:
             if i == order or i == TEND_COM[0]:
-                weight.append(error_or_pressure_rate*(error**k))  # add 1 to the used word order
+                weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
             else:
-                weight.append(-error_or_pressure_rate*(error**k))  # add -1 to weights of non-used word orders
+                weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -134,44 +123,17 @@ class Agent:
         res_lt = [(l1[x] + l2[x]) for x in range(len(l1))]
         return res_lt
 
-    def is_stubborn(self):  # check if stubborn
-        return self.personality == 'S'
-
-    def set_irrev_weights(self, mother,
-                          father):  # calculate average of mother+father weights for irreversible sentences
+    def set_irrev_weights(self, mother, father):  # calculate average of mother+father weights for irreversible sentences
         return self.list_average(mother.irrev_weights, father.irrev_weights)
 
     def set_rev_weights(self, mother, father):  # calculate average of mother+father weights for reversible sentences
         return self.list_average(mother.rev_weights, father.rev_weights)
 
-    def add_rev_weights(self, word_order):
-        if self.is_stubborn():
-            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_rev(word_order))
-        else:
-            multiplied_list = [element * 1 for element in self.new_weight_with_error_rev(word_order)]
-            self.rev_weights = self.list_summation(self.rev_weights, multiplied_list)
-
-    def add_irrev_weights(self, word_order):
-        if self.is_stubborn():
-            self.irrev_weights = self.list_summation(self.irrev_weights, self.new_weight_irrev(word_order))
-        else:
-            multiplied_list = [element * 1 for element in self.new_weight_with_error_irrev(word_order)]
-            self.irrev_weights = self.list_summation(self.irrev_weights, multiplied_list)
-
     def add_rev_weights_with_pressure(self, word_order):
-        if self.is_stubborn():
-            self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_with_pressure_rev(word_order))
-        else:
-            multiplied_list = [element * 1 for element in self.new_weight_with_pressure_rev(word_order)]
-            self.rev_weights = self.list_summation(self.rev_weights, multiplied_list)
+        self.rev_weights = self.list_summation(self.rev_weights, self.new_weight_with_pressure_rev(word_order))
 
     def add_irrev_weights_with_pressure(self, word_order):
-        if self.is_stubborn():
-            self.irrev_weights = self.list_summation(self.irrev_weights,
-                                                     self.new_weight_with_pressure_irrev(word_order))
-        else:
-            multiplied_list = [element * 1 for element in self.new_weight_with_pressure_irrev(word_order)]
-            self.irrev_weights = self.list_summation(self.irrev_weights, multiplied_list)
+        self.irrev_weights = self.list_summation(self.irrev_weights, self.new_weight_with_pressure_irrev(word_order))
 
 
 # print agents
@@ -184,12 +146,9 @@ def make_first_gen_agents(N):  # create N number of agents with different random
     population = []
 
     for i in range(N):
-        p = random.randint(0, 1)
+        p = random.choices([0, 1], weights=personality_weight, k=1)[0]
         agent = Agent(gen, personalities[p])
         population.append(agent)
-
-    # for obj in population:
-    # print(obj.rev_weights)
 
     print(TEND_COM)
     return population
@@ -199,7 +158,7 @@ def create_children(mother, father,
                     number_of_children):  # create children of given mother and father, with the given number of children
     children = []
     for i in range(number_of_children):
-        p = random.randint(0, 1)
+        p = random.choices([0, 1], weights=personality_weight, k=1)[0]
         child = Agent(mother.generation + 1, personalities[p], mother, father)
         children.append(child)
     return children
@@ -334,8 +293,9 @@ def two_people_communicate(n,
 
 
 # n people communicate with n sentences
-def n_people_communicate(n_people, n_sent,
+def n_people_communicate(n_p, n_sent,
                          population):  # n_people is the number of people, n_sent is the # of sentences for the communication, population is the given population
+    n_people = min(n_p, len(population))
     sentence_list = make_utterance(n_sent)  # create n_sent sentence type list (rev or irrev)
     selected_people = select_n_random_persons(n_people, population)  # select n_people random people in the population
 
@@ -350,7 +310,7 @@ def n_people_communicate(n_people, n_sent,
             # update listeners
             for l in selected_people:
                 if l != speaker:
-                    population[l].add_irrev_weights(spoken_word_order[0])
+                    population[l].add_irrev_weights_with_pressure(spoken_word_order[0])
 
         else:
             spoken_word_order = generate_word_order_list(basic_orders, population[speaker].rev_weights,
@@ -359,7 +319,7 @@ def n_people_communicate(n_people, n_sent,
             # update listeners
             for l in selected_people:
                 if l != speaker:
-                    population[l].add_rev_weights(spoken_word_order[0])
+                    population[l].add_rev_weights_with_pressure(spoken_word_order[0])
 
 
 # Population communication
@@ -482,7 +442,7 @@ def select_agents_of_given_gen_range(population, rnge):
 
 def main_simulation():
     TOTAL_POP = []
-    population_first_gen = make_first_gen_agents(k*n)  # create first community with 20 agents
+    population_first_gen = make_first_gen_agents(k * n)  # create first community with 20 agents
     population_final_word_orders(population_first_gen, "population first word orders")
 
     ############# COMMUNICATIONS #############
@@ -502,7 +462,8 @@ def main_simulation():
         TOTAL_POP.extend(new_gen)  # extend total population with last generation
         TOTAL_POP = list(
             filter(lambda person: person.generation >= i - 4, TOTAL_POP))  # filter out except last 4 generations
-        # n_groups_communicate(100, 50, 1000, TOTAL_POP) #communicate current living population
+        # n_people_communicate(k*n, 50000, TOTAL_POP)
+        # n_groups_communicate(100,k*n,5000,TOTAL_POP)
         group_communication_all_population_speaks(5000, TOTAL_POP)
         # population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
         # population_personality(TOTAL_POP, "population personality list") #print current personality rate
