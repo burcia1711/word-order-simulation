@@ -21,11 +21,11 @@ MAX_GROUP_SIZE = 7
 RANDOM_IRREV_BIAS = random.sample(range(0, 100), 6)
 RANDOM_REV_BIAS = random.sample(range(0, 100), 6)
 
-k = 2  # factor
+k = 4  # factor
 n = 25  # number of people in one starting group
 
 error = 10  # add to the weights
-personality_weight = [2, 8]
+personality_weight = [5, 5]
 coeff_stubborn = 10
 coeff_flexible = 1
 error_or_pressure_rate = 0.00001  # mesh
@@ -464,7 +464,7 @@ def main_simulation():
             filter(lambda person: person.generation >= i - 4, TOTAL_POP))  # filter out except last 4 generations
         # n_people_communicate(k*n, 50000, TOTAL_POP)
         # n_groups_communicate(100,k*n,5000,TOTAL_POP)
-        group_communication_all_population_speaks(5000, TOTAL_POP)
+        group_communication_all_population_speaks(1000, TOTAL_POP)
         # population_final_word_orders(TOTAL_POP, "population final word orders") #print current w.o.s
         # population_personality(TOTAL_POP, "population personality list") #print current personality rate
 
