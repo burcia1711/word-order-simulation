@@ -26,13 +26,14 @@ n = 25  # number of people in one starting group
 
 error = 10  # add to the weights
 personality_weight = [5, 5]
-coeff_stubborn = 10
-coeff_flexible = 1
+coeff_stubborn = 1000
+coeff_flexible = 100
+
 error_or_pressure_rate = 0.00001  # mesh
 # 0.000001  # star
 # 0.0000001  # one-to-one
-# 0.00001  # mesh
 
+GEN = 5
 BIAS_TYPE = "uniform"
 uniformIRREV = []
 uniformREV = []
@@ -98,14 +99,14 @@ class Agent:
         for i in basic_orders:
             if TEND:
                 if i == order or i == TEND_COM[0]:
-                    weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
+                    weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-                    weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
+                    weight.append(-error_or_pressure_rate * (error ** k)*GEN)  # add -1 to weights of non-used word orders
             else:
                 if i == order:
-                    weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
+                    weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-                    weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
+                    weight.append(-error_or_pressure_rate * (error ** k)*GEN)  # add -1 to weights of non-used word orders
         return weight
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
@@ -113,14 +114,14 @@ class Agent:
         for i in basic_orders:
             if TEND:
                 if i == order or i == TEND_COM[0]:
-                    weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
+                    weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-                    weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
+                    weight.append(-1 * error_or_pressure_rate * (error ** k) * GEN)  # add -1 to weights of non-used word orders
             else:
                 if i == order:
-                    weight.append(error_or_pressure_rate * (error ** k))  # add 1 to the used word order
+                    weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-                    weight.append(-error_or_pressure_rate * (error ** k))  # add -1 to weights of non-used word orders
+                    weight.append(-1 * error_or_pressure_rate * (error ** k) * GEN)  # add -1 to weights of non-used word orders
         return weight
 
     def list_summation(self, l1, l2):  # adding two lists
@@ -433,9 +434,11 @@ def main_simulation(bias, gen, tendency, comSize, network, dataSize, personality
     global TEND
     global personality_weight
     global error_or_pressure_rate
+    global GEN
 
     TEND = tendency
     personality_weight = personality
+    GEN = gen
 
     if bias == "uniform":
         BIAS_TYPE = "uniform"
@@ -486,7 +489,7 @@ networks = ["mesh", "star", "one-to-one"]
 data = [1000, 5000]
 personalityCase= [[8, 2], [5, 5], [2, 8]]
 id = 1
-LEFT = 216
+LEFT = 0
 
 for bias in BIAS:
     for generation in generations:
