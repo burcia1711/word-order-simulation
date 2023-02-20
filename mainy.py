@@ -37,10 +37,8 @@ GEN = 5
 BIAS_TYPE = "uniform"
 uniformIRREV = []
 uniformREV = []
-<<<<<<< HEAD
 REV_BIAS = [1, 1, 1, 1, 1, 5]
 IRREV_BIAS = [1, 5, 1, 1, 1, 1]
-=======
 
 i_irrev = random.randint(0, 5)
 i_rev = random.randint(0, 5)
@@ -48,7 +46,6 @@ i_rev = random.randint(0, 5)
 REV_BIAS = [1 if i is not i_rev else 5 for i in range(6)]
 IRREV_BIAS = [1 if i is not i_irrev else 5 for i in range(6)]
 
->>>>>>> f3aa075 (outputs deleted)
 
 tendency = [3, 8, 410, 350, 20, 70]  # world's current distribution
 TEND_COM = random.choices(basic_orders, weights=tendency, k=1)
@@ -65,11 +62,7 @@ def form_irrev_weight(personality, bias_type):
             return [coeff_stubborn] * 6
     elif bias_type == "biased":
         if personality == "F":
-<<<<<<< HEAD
-            return [i * coeff_flexible for i in REV_BIAS]
-=======
             return [i * coeff_flexible for i in IRREV_BIAS]
->>>>>>> f3aa075 (outputs deleted)
         elif personality == "S":
             return [i * coeff_stubborn for i in IRREV_BIAS]
     elif bias_type == "random":
@@ -89,11 +82,7 @@ def form_rev_weight(personality, bias_type):
         if personality == "F":
             return [i * coeff_flexible for i in REV_BIAS]
         elif personality == "S":
-<<<<<<< HEAD
-            return [i * coeff_stubborn for i in IRREV_BIAS]
-=======
             return [i * coeff_stubborn for i in REV_BIAS]
->>>>>>> f3aa075 (outputs deleted)
     elif bias_type == "random":
         if personality == "F":
             return [i * coeff_flexible for i in random.sample(range(0, 10), 6)]
@@ -119,20 +108,13 @@ class Agent:
                 if i == order or i == TEND_COM[0]:
                     weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-<<<<<<< HEAD
-                    weight.append(-error_or_pressure_rate * (error ** k)*GEN)  # add -1 to weights of non-used word orders
-=======
                     weight.append(-error_or_pressure_rate * (error ** k) * GEN)  # add -1 to weights of non-used word orders
->>>>>>> f3aa075 (outputs deleted)
             else:
                 if i == order:
                     weight.append(error_or_pressure_rate * (error ** k) * GEN)  # add 1 to the used word order
                 else:
-<<<<<<< HEAD
-                    weight.append(-error_or_pressure_rate * (error ** k)*GEN)  # add -1 to weights of non-used word orders
-=======
                     weight.append(-error_or_pressure_rate * (error ** k) * GEN)  # add -1 to weights of non-used word orders
->>>>>>> f3aa075 (outputs deleted)
+
         return weight
 
     def new_weight_with_pressure_rev(self, order):  # some pressures made us eliminate others
@@ -234,11 +216,7 @@ def plot_freq_list(lst, ttle, id):
     count = Counter(sorted(lst))
     df = pandas.DataFrame.from_dict(count, orient='index')
     df.plot(kind='bar', color="orange")
-<<<<<<< HEAD
-    plt.title("%s %d" % (ttle, id))
-=======
     plt.title("%s %d %s" % (ttle, id, TEND_COM[0] if TEND else ""))
->>>>>>> f3aa075 (outputs deleted)
     if len(ttle.split()) > 3:
         if ttle.split()[1] == "first":
             if ttle.split()[4] == "irrev":
@@ -459,23 +437,12 @@ def select_agents_of_given_gen_range(population, rnge):
     return community_index
 
 
-<<<<<<< HEAD
-def main_simulation(bias, gen, tendency, comSize, network, dataSize, personality, id):
-=======
 def main_simulation(bias, gen, tenden, comSize, network, dataSize, personality, id):
->>>>>>> f3aa075 (outputs deleted)
     global BIAS_TYPE
     global TEND
     global personality_weight
     global error_or_pressure_rate
     global GEN
-<<<<<<< HEAD
-
-    TEND = tendency
-    personality_weight = personality
-    GEN = gen
-
-=======
     global REV_BIAS
     global IRREV_BIAS
     global TEND_COM
@@ -497,7 +464,6 @@ def main_simulation(bias, gen, tenden, comSize, network, dataSize, personality, 
     IRREV_BIAS = [1 if i is not i_irrev else 2 for i in range(6)]
     print(IRREV_BIAS)
 
->>>>>>> f3aa075 (outputs deleted)
     if bias == "uniform":
         BIAS_TYPE = "uniform"
     elif bias == "biased":
@@ -536,27 +502,18 @@ def main_simulation(bias, gen, tenden, comSize, network, dataSize, personality, 
     population_personality(TOTAL_POP, "population personality list", id)  # print last 4 generations personalities
     print(BIAS_TYPE, TEND, personality_weight)
 
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> f3aa075 (outputs deleted)
 BIAS = ["uniform", "biased", "random"]
 generations = [5, 10, 20]
 tendencyWO = [True, False]
 firstComSize = [1, 2, 4]
 networks = ["mesh", "star", "one-to-one"]
 data = [1000, 5000]
-<<<<<<< HEAD
 personalityCase= [[8, 2], [5, 5], [2, 8]]
 id = 1
 LEFT = 0
-=======
 personalityCase = [[8, 2], [5, 5], [2, 8]]
 id = 1
 LEFT = 460
->>>>>>> f3aa075 (outputs deleted)
 
 for bias in BIAS:
     for generation in generations:
@@ -568,9 +525,5 @@ for bias in BIAS:
                             if id > LEFT:
                                 print(bias, generation, tend, k*n, network, dt, personalWeight, id)
                                 main_simulation(bias, generation, tend, k*n, network, dt, personalWeight, id)
-<<<<<<< HEAD
                             id += 1
 
-=======
-                            id += 1
->>>>>>> f3aa075 (outputs deleted)
