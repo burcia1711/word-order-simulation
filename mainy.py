@@ -513,7 +513,7 @@ id = 1
 LEFT = 0
 personalityCase = [[8, 2], [5, 5], [2, 8]]
 id = 1
-LEFT = 615
+LEFT = 961
 
 for bias in BIAS:
     for generation in generations:
