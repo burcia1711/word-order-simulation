@@ -217,6 +217,7 @@ def plot_freq_list(lst, ttle, id):
     df = pandas.DataFrame.from_dict(count, orient='index')
     df.plot(kind='bar', color="orange")
     plt.title("%s %d %s" % (ttle, id, TEND_COM[0] if TEND else ""))
+    plt.ylim(top=10000)
     if len(ttle.split()) > 3:
         if ttle.split()[1] == "first":
             if ttle.split()[4] == "irrev":
@@ -513,7 +514,7 @@ id = 1
 LEFT = 0
 personalityCase = [[8, 2], [5, 5], [2, 8]]
 id = 1
-LEFT = 928
+LEFT = 22
 
 for bias in BIAS:
     for generation in generations:
